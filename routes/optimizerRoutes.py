@@ -1,11 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from dependencies import get_api_key
-from services.llm import (
-    optimize_generate,
-    create_database,
-    populate_database,
-    analyze_optimization_effects,
-)
+from services.llm import LLMService
 from models.payloadOptimizer import (
     OptimizerRequest,
     OptimizerResponse,
@@ -20,12 +15,13 @@ from models.payloadOptimizer import (
 router = APIRouter(
     prefix="/optimizer", tags=["Optimizer"], dependencies=[Depends(get_api_key)]
 )
+service = LLMService()
 
 
 @router.post("/generate", response_model=OptimizerResponse)
 async def optimize_query(request: OptimizerRequest):
     try:
-        result = await optimize_generate(
+        result = await service.optimize_generate(
             query=request.query,
             database_structure=request.database_structure,
         )
@@ -37,7 +33,9 @@ async def optimize_query(request: OptimizerRequest):
 @router.post("/create-database", response_model=CreateDatabaseResponse)
 async def create_db(request: CreateDatabaseRequest):
     try:
-        sql = await create_database(database_structure=request.database_structure)
+        sql = await service.create_database(
+            database_structure=request.database_structure
+        )
         return CreateDatabaseResponse(sql=sql)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -46,7 +44,7 @@ async def create_db(request: CreateDatabaseRequest):
 @router.post("/populate", response_model=PopulateDatabaseResponse)
 async def populate_db(request: PopulateDatabaseRequest):
     try:
-        sql = await populate_database(
+        sql = await service.populate_database(
             creation_command=request.creation_command,
             number_insertions=request.number_insertions,
         )
@@ -58,7 +56,7 @@ async def populate_db(request: PopulateDatabaseRequest):
 @router.post("/analyze", response_model=OptimizationAnalysisResponse)
 async def analyze(request: OptimizationAnalysisRequest):
     try:
-        result = analyze_optimization_effects(
+        result = service.analyze_optimization_effects(
             original_metrics=request.original_metrics,
             optimized_metrics=request.optimized_metrics,
             original_query=request.original_query,

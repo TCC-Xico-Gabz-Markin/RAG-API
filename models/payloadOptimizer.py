@@ -16,7 +16,7 @@ class CreateDatabaseRequest(BaseModel):
 
 
 class CreateDatabaseResponse(BaseModel):
-    sql: str
+    sql: List[str]
 
 
 class PopulateDatabaseResponse(BaseModel):
